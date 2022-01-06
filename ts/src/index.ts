@@ -1,7 +1,8 @@
-import { placeBid, claimBid, cancelBid } from "@metaplex/js/lib/actions";
 import { TOKEN_PROGRAM_ID, MintLayout, u64 } from "@solana/spl-token";
 import { Auction } from '@metaplex-foundation/mpl-auction';
 import { PublicKey } from "@solana/web3.js";
+import { actions } from '@metaplex/js';
+const {placeBid, claimBid, cancelBid} = actions;
 
 
 export class USMClient{
@@ -13,8 +14,12 @@ export class USMClient{
     this.wallet= wallet;
   }
 
-  async placeBid(amount, auction, bidderPotToken){
-    await placeBid({
+  async getAuction(pubKey){
+    return Auction.load(this.connection, pubKey);
+  }
+
+  async placeBid(amount, auction, bidderPotToken?){
+    return placeBid({
       connection: this.connection, 
       wallet: this.wallet, 
       amount, 
@@ -23,8 +28,8 @@ export class USMClient{
     })
   }
 
-  async claimBid(store, auction, bidderPotToken){
-    await claimBid({
+  async claimBid(store, auction, bidderPotToken?){
+    return claimBid({
       connection: this.connection, 
       wallet: this.wallet,
       store, 
@@ -33,8 +38,8 @@ export class USMClient{
     })
   }
 
-  async cancelBid(auction, bidderPotToken, destAccount){
-    await cancelBid({
+  async cancelBid(auction, destAccount, bidderPotToken){
+    return cancelBid({
       connection: this.connection,
       wallet: this.wallet,
       auction,
@@ -43,9 +48,20 @@ export class USMClient{
     })
   }
 
-  async getAuction(pubKey){
-    return Auction.load(this.connection, pubKey);
+  //TODO: implement
+
+  async refundBid(){
+
+
   }
+
+  //TODO: implement
+
+  async redeemBid(){
+
+  }
+
+
 
   async getMint(pubKey){
     const info = await this.connection.getAccountInfo(pubKey);
