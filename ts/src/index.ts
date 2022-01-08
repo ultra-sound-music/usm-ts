@@ -1,5 +1,7 @@
 import { TOKEN_PROGRAM_ID, MintLayout, u64 } from "@solana/spl-token";
 import { Auction } from '@metaplex-foundation/mpl-auction';
+import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
+import { Account } from '@metaplex-foundation/mpl-core';
 import { PublicKey } from "@solana/web3.js";
 import { actions } from '@metaplex/js';
 const {placeBid, claimBid, cancelBid} = actions;
@@ -63,8 +65,8 @@ export class USMClient{
 
 
 
-  async getMint(pubKey){
-    const info = await this.connection.getAccountInfo(pubKey);
+  async getMint(tokenMint){
+    const info = await this.connection.getAccountInfo(tokenMint);
     if (info === null) {
       throw new Error('Failed to find mint account');
     }
@@ -94,6 +96,13 @@ export class USMClient{
     }
     return mintInfo;
 
+  }
+
+  async getMetadata(tokenMint){
+    const metadata = await Metadata.getPDA(tokenMint);
+    const metadataInfo = await Account.getInfo(this.connection, metadata);
+    const { data } = new Metadata(metadata, metadataInfo).data;
+    return data;
   }
 
 }
