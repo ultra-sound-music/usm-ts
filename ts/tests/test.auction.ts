@@ -32,7 +32,7 @@ describe('auction', () => {
   it("should place a bid on the auction", async ()=>{
 
     const bidAmount = new BN(6 * 10**8);
-    const tx = await USM.placeBid(bidAmount, AUCTION_PUBKEY );
+    const tx = await USM.placeBid(bidAmount, AUCTION_PUBKEY);
 
   })
 
@@ -45,7 +45,7 @@ describe('auction', () => {
   it("should cancel bid on the auction", async ()=>{
 
 
-    //TODOL nonsense test values, get real values
+    //TODO nonsense test values, get real values
     /*const destAccount = Keypair.generate();
     const bidderPotToken = Keypair.generate();
 
