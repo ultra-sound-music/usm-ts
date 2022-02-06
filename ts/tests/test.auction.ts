@@ -24,10 +24,8 @@ describe('auction', () => {
   })
 
   it("should load the auction", async ()=>{
-
     const auction = await USM.getAuction(AUCTION_PUBKEY);
     assert.strictEqual(AUCTION_PUBKEY.toBase58(), auction.pubkey.toBase58())
-
 
   })
 
