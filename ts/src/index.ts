@@ -2,15 +2,18 @@ import { TOKEN_PROGRAM_ID, MintLayout, u64 } from "@solana/spl-token";
 import { Auction } from '@metaplex-foundation/mpl-auction';
 import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
 import { Account } from '@metaplex-foundation/mpl-core';
-import {redeemBid} from '@metaplex-foundation/mpl-metaplex';
+import { RedeemBid } from "@metaplex-foundation/mpl-metaplex";
 import { PublicKey } from "@solana/web3.js";
 import { actions } from '@metaplex/js';
-const {placeBid, claimBid, cancelBid} = actions;
+const {placeBid, claimBid, cancelBid, redeemFullRightsTransferBid} = actions;
 
 
 export class USMClient{
   connection;
   wallet;
+
+    //TODO: sweep funds to admin wallet
+
 
   constructor(connection, wallet){
     this.connection = connection;
@@ -58,27 +61,14 @@ export class USMClient{
 
   }
 
-  //TODO: sweep funds to admin wallet
-
-  //TODO: implement
-
-  async redeemBid(auction){
-
-
-    /*return redeemBid({
-      vault,
-      auction,
-      auctionManager,
-      bidRedemption,
-      bidderMetadata,
-      safetyDepositTokenStore
-      ...r
-
-    })*/
-
+  async redeemBid(store, auction){
+    return redeemFullRightsTransferBid({
+      connection: this.connection,
+      wallet: this.wallet,
+      store,
+      auction
+    })
   }
-
-
 
   async getMint(tokenMint){
     const info = await this.connection.getAccountInfo(tokenMint);
