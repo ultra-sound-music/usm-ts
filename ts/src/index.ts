@@ -2,6 +2,7 @@ import { TOKEN_PROGRAM_ID, MintLayout, u64 } from "@solana/spl-token";
 import { Auction } from '@metaplex-foundation/mpl-auction';
 import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
 import { Account } from '@metaplex-foundation/mpl-core';
+import {redeemBid} from '@metaplex-foundation/mpl-metaplex';
 import { PublicKey } from "@solana/web3.js";
 import { actions } from '@metaplex/js';
 const {placeBid, claimBid, cancelBid} = actions;
@@ -57,9 +58,23 @@ export class USMClient{
 
   }
 
+  //TODO: sweep funds to admin wallet
+
   //TODO: implement
 
-  async redeemBid(){
+  async redeemBid(auction){
+
+
+    /*return redeemBid({
+      vault,
+      auction,
+      auctionManager,
+      bidRedemption,
+      bidderMetadata,
+      safetyDepositTokenStore
+      ...r
+
+    })*/
 
   }
 

@@ -12,6 +12,7 @@
   "dependencies": {
     "@metaplex-foundation/mpl-auction": "^0.0.2",
     "@metaplex-foundation/mpl-core": "^0.0.2",
+    "@metaplex-foundation/mpl-metaplex": "^0.0.5",
     "@metaplex-foundation/mpl-token-metadata": "^0.0.2",
     "@metaplex/js": "^4.10.1",
     "@project-serum/anchor": "^0.19.1-beta.1",
