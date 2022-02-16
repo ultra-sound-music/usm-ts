@@ -1,11 +1,12 @@
 import { TOKEN_PROGRAM_ID, MintLayout, u64 } from "@solana/spl-token";
-import { Auction } from '@metaplex-foundation/mpl-auction';
+import { Auction, PlaceBid } from '@metaplex-foundation/mpl-auction';
 import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
 import { Account } from '@metaplex-foundation/mpl-core';
 import { RedeemBid } from "@metaplex-foundation/mpl-metaplex";
 import { PublicKey } from "@solana/web3.js";
 import { actions } from '@metaplex/js';
-const {placeBid, claimBid, cancelBid, redeemFullRightsTransferBid} = actions;
+import { placeBid } from "./utils/utils";
+const { claimBid, cancelBid, redeemFullRightsTransferBid} = actions;
 
 
 export class USMClient{
@@ -24,13 +25,12 @@ export class USMClient{
     return Auction.load(this.connection, pubKey);
   }
 
-  async placeBid(amount, auction, bidderPotToken?){
+  async placeBid(amount, auction){
     return placeBid({
       connection: this.connection, 
       wallet: this.wallet, 
       amount, 
       auction, 
-      bidderPotToken
     })
   }
 

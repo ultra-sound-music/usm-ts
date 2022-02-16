@@ -4,7 +4,7 @@ import {web3, Provider, BN} from "@project-serum/anchor"
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { assert } from "chai";
 import { USMClient } from "../src";
-import { AUCTION_PUBKEY, NFT_PUBKEY, TOKEN_MINT_PUBKEY} from "./utils";
+import { AUCTION_PUBKEY} from "./utils";
 const {Keypair} = web3;
 
 
@@ -30,7 +30,6 @@ describe('auction', () => {
   })
 
   it("should place a bid on the auction", async ()=>{
-
     const bidAmount = new BN(6 * 10**8);
     const tx = await USM.placeBid(bidAmount, AUCTION_PUBKEY);
 
