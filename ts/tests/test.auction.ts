@@ -31,7 +31,13 @@ describe('auction', () => {
 
   it("should place a bid on the auction", async ()=>{
     const bidAmount = new BN(6 * 10**8);
-    const tx = await USM.placeBid(bidAmount, AUCTION_PUBKEY);
+    const {txId} = await USM.placeBid(bidAmount, AUCTION_PUBKEY);
+    await connection.confirmTransaction(txId)
+  })
+
+  it("should cancel a bid on the auction", async ()=>{
+    const {txId} = await USM.cancelBid(AUCTION_PUBKEY);
+    await connection.confirmTransaction(txId)
 
   })
 
@@ -41,15 +47,5 @@ describe('auction', () => {
 
   })
 
-  it("should cancel bid on the auction", async ()=>{
-
-
-    //TODO nonsense test values, get real values
-    /*const destAccount = Keypair.generate();
-    const bidderPotToken = Keypair.generate();
-
-    const tx = await USM.cancelBid(AUCTION_PUBKEY, destAccount.publicKey, bidderPotToken.publicKey );*/
-
-  })
 
 })

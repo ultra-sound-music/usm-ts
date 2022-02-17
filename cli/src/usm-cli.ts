@@ -277,6 +277,7 @@ program
           auctionGap: null,
           endAuctionAt: null,
           gapTickSizePercentage: null,
+          resource: vaultPubKey,
           winners: new WinnerLimit({
             type: WinnerLimitType.Capped,
             usize: new BN(1),

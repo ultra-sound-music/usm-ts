@@ -110,7 +110,6 @@ export const placeBid = async ({
   wallet,
   amount,
   auction,
-  bidderPotToken,
 }: PlaceBidParams): Promise<PlaceBidResponse> => {
   const {payer} = wallet;
   const bidder = wallet.publicKey;
@@ -125,30 +124,11 @@ export const placeBid = async ({
   const auctionExtended = await AuctionExtended.getPDA(vault);
   const bidderPot = await BidderPot.getPDA(auction, bidder);
   const bidderMeta = await BidderMetadata.getPDA(auction, bidder);
-  ////
+  const bidderPotToken = await getBidderPotTokenPDA(bidderPot)
 
   let txBatch = new TransactionsBatch({ transactions: [] });
-
-  if (bidderPotToken) {
-    // cancel prev bid
-    txBatch = await getCancelBidTransactions({
-      destAccount: null,
-      bidder,
-      accountRentExempt,
-      bidderPot,
-      bidderPotToken,
-      bidderMeta,
-      auction,
-      auctionExtended,
-      auctionTokenMint,
-      vault,
-    });
-    ////
-  } else {
     // create a new account for bid
-    bidderPotToken = await getBidderPotTokenPDA(bidderPot)
     ////
-  }
   // create paying account
   const {
     account: payingAccount,
@@ -204,3 +184,71 @@ export const placeBid = async ({
 
   return { txId, bidderPotToken, bidderMeta };
 };
+
+
+/**
+ * Parameters for {@link cancelBid}
+ */
+ export interface CancelBidParams {
+  connection: Connection;
+  /** Wallet of the original bidder **/
+  wallet: NodeWallet;
+  /** Program account of the auction for the bid to be cancelled **/
+  auction: PublicKey;
+  /** The bidders token account they'll receive refund with **/
+  destAccount?: PublicKey;
+}
+
+export interface CancelBidResponse {
+  txId: string;
+}
+
+/**
+ * Cancel a bid on a running auction. Any bidder can cancel any time during an auction, but only non-winners of the auction can cancel after it ends. When users cancel, they receive full refunds.
+ */
+export const cancelBid = async ({
+  connection,
+  wallet,
+  auction,
+  destAccount,
+}: CancelBidParams): Promise<CancelBidResponse> => {
+  const bidder = wallet.publicKey;
+  const auctionManager = await AuctionManager.getPDA(auction);
+  const manager = await AuctionManager.load(connection, auctionManager);
+  const {
+    data: { tokenMint },
+  } = await manager.getAuction(connection);
+
+  const auctionTokenMint = new PublicKey(tokenMint);
+  const vault = new PublicKey(manager.data.vault);
+  const auctionExtended = await AuctionExtended.getPDA(vault);
+  const bidderPot = await BidderPot.getPDA(auction, bidder);
+  const bidderMeta = await BidderMetadata.getPDA(auction, bidder);
+  const bidderPotToken = await getBidderPotTokenPDA(bidderPot)
+
+  const accountRentExempt = await connection.getMinimumBalanceForRentExemption(AccountLayout.span);
+  const txBatch = await getCancelBidTransactions({
+    destAccount,
+    bidder,
+    accountRentExempt,
+    bidderPot,
+    bidderPotToken,
+    bidderMeta,
+    auction,
+    auctionExtended,
+    auctionTokenMint,
+    vault,
+  });
+
+  const txId = await sendTransaction({
+    connection,
+    wallet,
+    txs: txBatch.toTransactions(),
+    signers: txBatch.signers,
+  });
+
+  return { txId };
+};
+
+
+
