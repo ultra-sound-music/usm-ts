@@ -1,0 +1,23 @@
+{
+  "name": "Pato",
+  "symbol": "PATO",
+  "description": "El pato sin manos",
+  "seller_fee_basis_points": 500,
+  "external_url": "",
+  "image": "https://www.arweave.net/RTiX1MRVCIAnSGhgZ9-GVvn6seHYu6_kg8SR9tOnwfk?ext=jpeg",
+  "properties": {
+    "files": [
+      {
+        "uri": "https://www.arweave.net/RTiX1MRVCIAnSGhgZ9-GVvn6seHYu6_kg8SR9tOnwfk?ext=jpeg",
+        "type": "image/jpeg"
+      }
+    ],
+    "category": "image",
+    "creators": [
+      {
+        "address": "3QJZJujTgrfeGQhLPX3YMseZ7ovhQbo6eWu3SLbMQzqS",
+        "share": 100
+      }
+    ]
+  }
+}
