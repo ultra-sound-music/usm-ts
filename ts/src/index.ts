@@ -3,9 +3,11 @@ import { Auction } from '@metaplex-foundation/mpl-auction';
 import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
 import { Account } from '@metaplex-foundation/mpl-core';
 import { RedeemBid } from "@metaplex-foundation/mpl-metaplex";
+import { Connection, Wallet } from '@metaplex/js';
 import { PublicKey } from "@solana/web3.js";
 import { actions } from '@metaplex/js';
 import { placeBid, cancelBid } from "./utils/utils";
+import BN from 'bn.js';
 const { claimBid, redeemFullRightsTransferBid} = actions;
 
 
@@ -16,16 +18,16 @@ export class USMClient{
     //TODO: sweep funds to admin wallet
 
 
-  constructor(connection, wallet){
+  constructor(connection: Connection, wallet: Wallet){
     this.connection = connection;
     this.wallet= wallet;
   }
 
-  async getAuction(pubKey){
+  async getAuction(pubKey: PublicKey){
     return Auction.load(this.connection, pubKey);
   }
 
-  async placeBid(amount, auction){
+  async placeBid(amount: BN, auction: PublicKey){
     return placeBid({
       connection: this.connection, 
       wallet: this.wallet, 
@@ -34,7 +36,7 @@ export class USMClient{
     })
   }
 
-  async claimBid(store, auction, bidderPotToken?){
+  async claimBid(store: PublicKey, auction: PublicKey, bidderPotToken?:PublicKey){
 
     return claimBid({
       connection: this.connection, 
@@ -45,7 +47,7 @@ export class USMClient{
     })
   }
 
-  async cancelBid(auction){
+  async cancelBid(auction: PublicKey){
 
     return cancelBid({
       connection: this.connection,
@@ -61,7 +63,7 @@ export class USMClient{
 
   }
 
-  async redeemBid(store, auction){
+  async redeemBid(store: PublicKey, auction: PublicKey){
     return redeemFullRightsTransferBid({
       connection: this.connection,
       wallet: this.wallet,
@@ -70,7 +72,7 @@ export class USMClient{
     })
   }
 
-  async getMint(tokenMint){
+  async getMint(tokenMint: PublicKey){
     const info = await this.connection.getAccountInfo(tokenMint);
     if (info === null) {
       throw new Error('Failed to find mint account');
@@ -103,7 +105,7 @@ export class USMClient{
 
   }
 
-  async getMetadata(tokenMint){
+  async getMetadata(tokenMint: PublicKey){
     const metadata = await Metadata.getPDA(tokenMint);
     const metadataInfo = await Account.getInfo(this.connection, metadata);
     const { data } = new Metadata(metadata, metadataInfo).data;
