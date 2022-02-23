@@ -3,7 +3,7 @@ import { Commitment, Keypair, PublicKey, SystemProgram, TransactionSignature, se
 import { AccountLayout, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Connection } from '@metaplex/js';
 
-import { NodeWallet } from '@metaplex/js';
+import { Wallet } from '@metaplex/js';
 
 import {
   AuctionProgram,
@@ -86,7 +86,7 @@ export class TransactionsBatch {
 export interface PlaceBidParams {
   connection: Connection;
   /** The wallet from which tokens will be taken and transferred to the {@link bidderPotToken} account **/
-  wallet: NodeWallet;
+  wallet: Wallet;
   /** The {@link Auction} program account address for the bid **/
   auction: PublicKey;
   /** Associated token account for the bidder pot **/
@@ -111,7 +111,6 @@ export const placeBid = async ({
   amount,
   auction,
 }: PlaceBidParams): Promise<PlaceBidResponse> => {
-  const {payer} = wallet;
   const bidder = wallet.publicKey;
   const accountRentExempt = await connection.getMinimumBalanceForRentExemption(AccountLayout.span);
   const auctionManager = await AuctionManager.getPDA(auction);
@@ -192,7 +191,7 @@ export const placeBid = async ({
  export interface CancelBidParams {
   connection: Connection;
   /** Wallet of the original bidder **/
-  wallet: NodeWallet;
+  wallet: Wallet;
   /** Program account of the auction for the bid to be cancelled **/
   auction: PublicKey;
   /** The bidders token account they'll receive refund with **/
