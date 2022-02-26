@@ -256,26 +256,37 @@ program
         'Solana cluster env name',
         'devnet',
     )
+    .option(
+        '-m, --minprice <number>',
+        `minimum price for auction in SOL`,
+        '0',
+    )
     .requiredOption(
         '-k, --keypair <path>',
         `Solana wallet location`,
         '--keypair not provided',
     )
+    .requiredOption(
+        '-e, --endtime <number>',
+        `unix timestamp of end time of auction`,
+        '--endtime not provided',
+    )
     .action(async (vault, options) => {
 
         // get values from options
 
-        const { env, keypair } = options;
+        const { env, keypair, endtime, minprice } = options;
 
         const connection = new Connection(clusterApiUrl(env))
         const wallet = new NodeWallet(loadKeypair(keypair))
         const vaultPubKey = new PublicKey(vault)
 
+
         const auctionSettings = {
           instruction: 1,
           tickSize: null,
           auctionGap: null,
-          endAuctionAt: null,
+          endAuctionAt: new BN(endtime),
           gapTickSizePercentage: null,
           resource: vaultPubKey,
           winners: new WinnerLimit({
@@ -283,7 +294,10 @@ program
             usize: new BN(1),
           }),
           tokenMint: NATIVE_MINT.toBase58(),
-          priceFloor: new PriceFloor({ type: PriceFloorType.Minimum }),
+          priceFloor: new PriceFloor({ 
+              type: Number(minprice) > 0 ? PriceFloorType.Minimum : PriceFloorType.None,
+              minPrice: new BN(minprice)
+            }),
         };
 
         const {txId, auction} = await initAuction({connection, wallet, vault: vaultPubKey, auctionSettings})
