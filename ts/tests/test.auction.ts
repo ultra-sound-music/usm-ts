@@ -19,17 +19,24 @@ describe('auction', () => {
     const walletKeypair = Keypair.generate()
     provider = new Provider(new Connection(clusterApiUrl('devnet')), new NodeWallet(walletKeypair), {});
     ({connection, wallet} = provider);
-    await connection.confirmTransaction( await connection.requestAirdrop(wallet.publicKey, LAMPORTS_PER_SOL))
+    //await connection.confirmTransaction( await connection.requestAirdrop(wallet.publicKey, LAMPORTS_PER_SOL))
     USM = new USMClient(connection, wallet);
   })
 
-  it("should load the auction", async ()=>{
+
+  /*it("should load the auction", async ()=>{
     const auction = await USM.getAuction(AUCTION_PUBKEY);
     assert.strictEqual(AUCTION_PUBKEY.toBase58(), auction.pubkey.toBase58())
 
+  })*/
+
+  it("should get the auction data", async ()=>{
+    const auctionData = await USM.getAuctionData(AUCTION_PUBKEY);
+    console.log(auctionData);
+    assert.strictEqual(AUCTION_PUBKEY.toBase58(), auctionData.pubkey.toBase58())
   })
 
-  it("should place a bid on the auction", async ()=>{
+  /*it("should place a bid on the auction", async ()=>{
     const bidAmount = new BN(6 * 10**8);
     const {txId} = await USM.placeBid(bidAmount, AUCTION_PUBKEY);
     await connection.confirmTransaction(txId)
@@ -45,7 +52,7 @@ describe('auction', () => {
 
     //const tx = await USM.claimBid(STORE_PUBKEY, AUCTION_PUBKEY );
 
-  })
+  })*/
 
 
 })

@@ -209,7 +209,6 @@ program
 
         const connection = new Connection(clusterApiUrl(env))
         const wallet = new NodeWallet(loadKeypair(keypair))
-        const {payer} = wallet;
 
         const {txId, mint} = await mintNFT({connection, wallet, uri, maxSupply: 1})
 
@@ -220,7 +219,43 @@ program
 
     program
     .command('add-nft-to-vault')
-    .argument('<nft>', 'nft pub ke')
+    .argument('<nft>', 'nft pub key')
+    .argument('<vault>', 'vault pub key')
+    .option(
+        '-e, --env <string>',
+        'Solana cluster env name',
+        'devnet',
+    )
+    .requiredOption(
+        '-k, --keypair <path>',
+        `Solana wallet location`,
+        '--keypair not provided',
+    )
+    .action(async (nft, vault, options) => {
+
+        const { env, keypair } = options;
+
+        const connection = new Connection(clusterApiUrl(env))
+        const wallet = new NodeWallet(loadKeypair(keypair))
+        const {payer} = wallet;
+
+        const nftMint = new PublicKey(nft);
+        const vaultPubKey = new PublicKey(vault);
+
+        const nftToken = new Token(connection, nftMint, TOKEN_PROGRAM_ID, payer);
+
+        const {address} = await nftToken.getOrCreateAssociatedAccountInfo(payer.publicKey);
+
+        const {safetyDepositTokenStores} = await addTokensToVault({
+            connection, wallet, vault: vaultPubKey, nfts: [{tokenAccount: address, tokenMint: nftMint, amount: new BN(1)}] })
+
+        console.log(`nft succesfully added to vault ${vault}`)
+        console.log("Token store account = ,", safetyDepositTokenStores[0].tokenStoreAccount.toBase58())
+
+    })
+
+    program
+    .command('close-vault')
     .argument('<vault>', 'vault pub key')
     .argument('<price_mint>', 'price mint pub key')
     .option(
@@ -233,30 +268,20 @@ program
         `Solana wallet location`,
         '--keypair not provided',
     )
-    .action(async (nft, vault, price_mint, options) => {
+    .action(async ( vault, price_mint, options) => {
 
         const { env, keypair } = options;
 
         const connection = new Connection(clusterApiUrl(env))
         const wallet = new NodeWallet(loadKeypair(keypair))
-        const {payer} = wallet;
 
-        const nftMint = new PublicKey(nft);
         const vaultPubKey = new PublicKey(vault);
         const priceMintPubKey = new PublicKey(price_mint);
 
-        const nftToken = new Token(connection, nftMint, TOKEN_PROGRAM_ID, payer);
-
-        const {address} = await nftToken.getOrCreateAssociatedAccountInfo(payer.publicKey);
-
-        const {safetyDepositTokenStores} = await addTokensToVault({
-            connection, wallet, vault: new PublicKey(vault), nfts: [{tokenAccount: address, tokenMint: nftMint, amount: new BN(1)}] })
-
         await closeVault({connection, wallet, vault: vaultPubKey, priceMint: priceMintPubKey})
 
-        console.log("nft succesfully added to vault and vault state moved to combined, ready for init auction")
-        console.log("Token store account = ,", safetyDepositTokenStores[0].tokenStoreAccount.toBase58())
-
+        console.log(`vault ${vault} state moved to combined, ready for init auction`)
+ 
     })
 
     
@@ -278,10 +303,9 @@ program
         `Solana wallet location`,
         '--keypair not provided',
     )
-    .requiredOption(
+    .option(
         '-e, --endtime <number>',
         `unix timestamp of end time of auction`,
-        '--endtime not provided',
     )
     .action(async (vault, options) => {
 
@@ -298,7 +322,7 @@ program
           instruction: 1,
           tickSize: null,
           auctionGap: null,
-          endAuctionAt: new BN(endtime),
+          endAuctionAt: endtime ? new BN(endtime): null,
           gapTickSizePercentage: null,
           resource: vaultPubKey,
           winners: new WinnerLimit({
@@ -307,8 +331,8 @@ program
           }),
           tokenMint: NATIVE_MINT.toBase58(),
           priceFloor: new PriceFloor({ 
-              type: Number(minprice) > 0 ? PriceFloorType.Minimum : PriceFloorType.None,
-              minPrice: new BN(minprice)
+              type: Number(Number(minprice) * web3.LAMPORTS_PER_SOL) > 0 ? PriceFloorType.Minimum : PriceFloorType.None,
+              minPrice: new BN(Number(minprice) * web3.LAMPORTS_PER_SOL)
             }),
         };
 
