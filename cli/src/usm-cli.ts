@@ -197,24 +197,28 @@ program
         'Solana cluster env name',
         'devnet',
     )
+    .option(
+        '--participation', 'use if this is a participation nft'
+    )
     .requiredOption(
         '-k, --keypair <path>',
         `Solana wallet location`,
         '--keypair not provided',
     )
+   
     .action(async (uri, options) => {
 
-        const { env, keypair } = options;
+        const { env, keypair, participation } = options;
 
 
         const connection = new Connection(clusterApiUrl(env))
         const wallet = new NodeWallet(loadKeypair(keypair))
 
-        const {txId, mint} = await mintNFT({connection, wallet, uri, maxSupply: 1})
+        const {txId, mint} = await mintNFT({connection, wallet, uri, maxSupply: participation ? null: 1})
 
         await connection.confirmTransaction(txId);
 
-        console.log("nft created, pub key =", mint.toBase58())
+        console.log(`${participation && `participation `}nft created, pub key = ${mint.toBase58()}`)
     })
 
     program
@@ -507,9 +511,8 @@ program
                 const participationMetadataPDA = await Metadata.getPDA(participationPubKey);
                 const participationEditionPDA = await MasterEdition.getPDA(participationPubKey);
                 const participationSafetyDepositBox = await SafetyDepositBox.getPDA(vaultPubKey, participationPubKey);
-                const participationSafetyDepositConfig = await SafetyDepositConfig.getPDA(auctionManagerPDA,safetyDepositBox);
+                const participationSafetyDepositConfig = await SafetyDepositConfig.getPDA(auctionManagerPDA,participationSafetyDepositBox);
                 const participationOriginalAuthorityLookup = await getOriginalLookupPDA(auctionPDA, participationMetadataPDA);
-
 
 
             const participationSafetyDepositConfigData = new SafetyDepositConfigData({
