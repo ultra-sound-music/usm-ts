@@ -4,12 +4,24 @@ import * as web3 from '@solana/web3.js';
 import BN from 'bn.js';
 import { NATIVE_MINT, Token, TOKEN_PROGRAM_ID} from '@solana/spl-token';
 import { NodeWallet, actions } from '@metaplex/js';
-const {initStoreV2, createExternalPriceAccount, createVault, initAuction, addTokensToVault, mintNFT, closeVault} = actions;
+const {initStoreV2, createExternalPriceAccount, createVault, initAuction, addTokensToVault, mintNFT, closeVault, claimBid} = actions;
 const { Connection, clusterApiUrl, PublicKey,  sendAndConfirmTransaction } = web3;
-import { loadKeypair, createMetadataUri, getOriginalLookupPDA } from "./utils/utils"
+import { loadKeypair, createMetadataUri, getOriginalLookupPDA,  } from "./utils/utils"
+
+import { 
+    AmountRange, 
+    ParticipationStateV2, 
+    ParticipationConfigV2,
+    SafetyDepositConfigData, 
+    NonWinningConstraint,
+    WinningConfigType, 
+    WinningConstraint } from './utils/SafetyDepositConfig';
+
+
 
 import {  
   Auction,
+  AuctionExtended,
   SetAuctionAuthority,
   WinnerLimit, 
   WinnerLimitType,
@@ -29,6 +41,7 @@ import {
     AuctionWinnerTokenTypeTracker,
     InitAuctionManagerV2,
     StartAuction,
+    EndAuction,
     SafetyDepositConfig,
   } from '@metaplex-foundation/mpl-metaplex';
 
@@ -44,7 +57,6 @@ import {
 
 
 import { program } from 'commander';
-import { AmountRange, SafetyDepositConfigData, WinningConfigType } from './utils/SafetyDepositConfig';
 program.version('1.0.0');
 
 
@@ -185,30 +197,69 @@ program
         'Solana cluster env name',
         'devnet',
     )
+    .option(
+        '--participation', 'use if this is a participation nft'
+    )
     .requiredOption(
         '-k, --keypair <path>',
         `Solana wallet location`,
         '--keypair not provided',
     )
+   
     .action(async (uri, options) => {
 
-        const { env, keypair } = options;
+        const { env, keypair, participation } = options;
 
+
+        const connection = new Connection(clusterApiUrl(env))
+        const wallet = new NodeWallet(loadKeypair(keypair))
+
+        const {txId, mint} = await mintNFT({connection, wallet, uri, maxSupply: participation ? null: 1})
+
+        await connection.confirmTransaction(txId);
+
+        console.log(`${participation && `participation `}nft created, pub key = ${mint.toBase58()}`)
+    })
+
+    program
+    .command('add-nft-to-vault')
+    .argument('<nft>', 'nft pub key')
+    .argument('<vault>', 'vault pub key')
+    .option(
+        '-e, --env <string>',
+        'Solana cluster env name',
+        'devnet',
+    )
+    .requiredOption(
+        '-k, --keypair <path>',
+        `Solana wallet location`,
+        '--keypair not provided',
+    )
+    .action(async (nft, vault, options) => {
+
+        const { env, keypair } = options;
 
         const connection = new Connection(clusterApiUrl(env))
         const wallet = new NodeWallet(loadKeypair(keypair))
         const {payer} = wallet;
 
-        const {txId, mint} = await mintNFT({connection, wallet, uri, maxSupply: 1})
+        const nftMint = new PublicKey(nft);
+        const vaultPubKey = new PublicKey(vault);
 
-        await connection.confirmTransaction(txId);
+        const nftToken = new Token(connection, nftMint, TOKEN_PROGRAM_ID, payer);
 
-        console.log("nft created, pub key =", mint.toBase58())
+        const {address} = await nftToken.getOrCreateAssociatedAccountInfo(payer.publicKey);
+
+        const {safetyDepositTokenStores} = await addTokensToVault({
+            connection, wallet, vault: vaultPubKey, nfts: [{tokenAccount: address, tokenMint: nftMint, amount: new BN(1)}] })
+
+        console.log(`nft succesfully added to vault ${vault}`)
+        console.log("Token store account = ,", safetyDepositTokenStores[0].tokenStoreAccount.toBase58())
+
     })
 
     program
-    .command('add-nft-to-vault')
-    .argument('<nft>', 'nft pub ke')
+    .command('close-vault')
     .argument('<vault>', 'vault pub key')
     .argument('<price_mint>', 'price mint pub key')
     .option(
@@ -221,30 +272,20 @@ program
         `Solana wallet location`,
         '--keypair not provided',
     )
-    .action(async (nft, vault, price_mint, options) => {
+    .action(async ( vault, price_mint, options) => {
 
         const { env, keypair } = options;
 
         const connection = new Connection(clusterApiUrl(env))
         const wallet = new NodeWallet(loadKeypair(keypair))
-        const {payer} = wallet;
 
-        const nftMint = new PublicKey(nft);
         const vaultPubKey = new PublicKey(vault);
         const priceMintPubKey = new PublicKey(price_mint);
 
-        const nftToken = new Token(connection, nftMint, TOKEN_PROGRAM_ID, payer);
-
-        const {address} = await nftToken.getOrCreateAssociatedAccountInfo(payer.publicKey);
-
-        const {safetyDepositTokenStores} = await addTokensToVault({
-            connection, wallet, vault: new PublicKey(vault), nfts: [{tokenAccount: address, tokenMint: nftMint, amount: new BN(1)}] })
-
         await closeVault({connection, wallet, vault: vaultPubKey, priceMint: priceMintPubKey})
 
-        console.log("nft succesfully added to vault and vault state moved to combined, ready for init auction")
-        console.log("Token store account = ,", safetyDepositTokenStores[0].tokenStoreAccount.toBase58())
-
+        console.log(`vault ${vault} state moved to combined, ready for init auction`)
+ 
     })
 
     
@@ -256,26 +297,36 @@ program
         'Solana cluster env name',
         'devnet',
     )
+    .option(
+        '-m, --minprice <number>',
+        `minimum price for auction in SOL`,
+        '0',
+    )
     .requiredOption(
         '-k, --keypair <path>',
         `Solana wallet location`,
         '--keypair not provided',
     )
+    .option(
+        '-e, --endtime <number>',
+        `unix timestamp of end time of auction`,
+    )
     .action(async (vault, options) => {
 
         // get values from options
 
-        const { env, keypair } = options;
+        const { env, keypair, endtime, minprice } = options;
 
         const connection = new Connection(clusterApiUrl(env))
         const wallet = new NodeWallet(loadKeypair(keypair))
         const vaultPubKey = new PublicKey(vault)
 
+
         const auctionSettings = {
           instruction: 1,
           tickSize: null,
           auctionGap: null,
-          endAuctionAt: null,
+          endAuctionAt: endtime ? new BN(endtime): null,
           gapTickSizePercentage: null,
           resource: vaultPubKey,
           winners: new WinnerLimit({
@@ -283,7 +334,10 @@ program
             usize: new BN(1),
           }),
           tokenMint: NATIVE_MINT.toBase58(),
-          priceFloor: new PriceFloor({ type: PriceFloorType.Minimum }),
+          priceFloor: new PriceFloor({ 
+              type: Number(Number(minprice) * web3.LAMPORTS_PER_SOL) > 0 ? PriceFloorType.Minimum : PriceFloorType.None,
+              minPrice: new BN(Number(minprice) * web3.LAMPORTS_PER_SOL)
+            }),
         };
 
         const {txId, auction} = await initAuction({connection, wallet, vault: vaultPubKey, auctionSettings})
@@ -371,19 +425,27 @@ program
             'Solana cluster env name',
             'devnet',
         )
+        .option(
+            '-p, --participation_nft <string>',
+            'participation nft mint',
+        )
+        .option(
+            '-pts, --participation_token_store <string>',
+            'participation nft mint',
+        )
         .requiredOption(
             '-k, --keypair <path>',
             `Solana wallet location`,
             '--keypair not provided',
         )
-        .action(async (vault, mint, token_store, options) =>{
-            const { env, keypair } = options;
+        .action(async (vault, nft, token_store, options) =>{
+            const { env, keypair, participation_nft, participation_token_store } = options;
 
             const connection = new Connection(clusterApiUrl(env))
             const wallet = new NodeWallet(loadKeypair(keypair))
             const {payer} = wallet;
 
-            const mintPubKey = new PublicKey(mint);
+            const mintPubKey = new PublicKey(nft);
             const vaultPubKey = new PublicKey(vault);
             const tokenStorePubKey = new PublicKey(token_store);
 
@@ -436,6 +498,67 @@ program
                 await sendAndConfirmTransaction(connection, tx, [payer], {
                     commitment: 'confirmed',
                 });
+            
+
+            // setup and validate participation nft safety deposit box
+
+            if(participation_nft) {
+
+                const participationPubKey = new PublicKey(participation_nft);
+                const participationTokenStore = new PublicKey(participation_token_store);
+
+
+                const participationMetadataPDA = await Metadata.getPDA(participationPubKey);
+                const participationEditionPDA = await MasterEdition.getPDA(participationPubKey);
+                const participationSafetyDepositBox = await SafetyDepositBox.getPDA(vaultPubKey, participationPubKey);
+                const participationSafetyDepositConfig = await SafetyDepositConfig.getPDA(auctionManagerPDA,participationSafetyDepositBox);
+                const participationOriginalAuthorityLookup = await getOriginalLookupPDA(auctionPDA, participationMetadataPDA);
+
+
+            const participationSafetyDepositConfigData = new SafetyDepositConfigData({
+                auctionManager: auctionManagerPDA.toBase58(),
+                order: new BN(1),
+                winningConfigType: WinningConfigType.Participation,
+                amountType: TupleNumericType.U8,
+                lengthType: TupleNumericType.U8,
+                // not sure what amount ranges for participation nft should be given that it depends on num bidderss
+                amountRanges: [new AmountRange({amount: new BN(1), length: new BN(1)})],
+                participationConfig: new ParticipationConfigV2({
+                    winnerConstraint:   WinningConstraint.ParticipationPrizeGiven,
+                    nonWinningConstraint: NonWinningConstraint.GivenForFixedPrice,
+                    fixedPrice: null
+                }),
+                participationState: new ParticipationStateV2({
+                    collectedToAcceptPayment: new BN(0),
+                  }),
+            })
+
+                const tx = new ValidateSafetyDepositBoxV2(
+                    {feePayer: payer.publicKey },
+                    {   
+                        store:storeId,
+                        vault: vaultPubKey,
+                        auctionManager: auctionManagerPDA,
+                        auctionManagerAuthority: payer.publicKey,
+                        metadataAuthority: payer.publicKey, 
+                        originalAuthorityLookup: participationOriginalAuthorityLookup,
+                        tokenTracker: tokenTrackerPDA,
+                        tokenAccount: participationMetadataPDA,
+                        tokenMint:participationPubKey,
+                        edition: participationEditionPDA,
+                        whitelistedCreator: whitelistedCreatorPDA,
+                        safetyDepositBox: participationSafetyDepositBox,
+                        safetyDepositTokenStore: participationTokenStore,
+                        safetyDepositConfig: participationSafetyDepositConfig,
+                        safetyDepositConfigData: participationSafetyDepositConfigData
+                    }
+                )
+
+                await sendAndConfirmTransaction(connection, tx, [payer], {
+                    commitment: 'confirmed',
+                });
+
+            }
         })
 
     program
@@ -496,5 +619,86 @@ program
         })
 
 
+        program
+        .command('end-auction')
+        .argument('<vault>', 'auction vault')
+        .option(
+            '-e, --env <string>',
+            'Solana cluster env name',
+            'devnet',
+        )
+        .requiredOption(
+            '-k, --keypair <path>',
+            `Solana wallet location`,
+            '--keypair not provided',
+        )
+        .action(async (vault, options) => {
+
+            const { env, keypair } = options;
+
+            const connection = new Connection(clusterApiUrl(env))
+            const wallet = new NodeWallet(loadKeypair(keypair))
+
+            const {payer} = wallet
+            const storeId = await Store.getPDA(payer.publicKey);
+
+            const vaultPubKey = new PublicKey(vault);
+            const auctionPDA = await Auction.getPDA(vaultPubKey);
+            const auctionExtendedPDA = await AuctionExtended.getPDA(vaultPubKey)
+            const auctionManagerPDA = await AuctionManager.getPDA(auctionPDA);
+
+       
+            const tx = new EndAuction(
+              { feePayer: payer.publicKey },
+              {
+                  store:storeId,
+                  auction: auctionPDA,
+                  auctionExtended:auctionExtendedPDA,
+                  auctionManager: auctionManagerPDA,
+                  auctionManagerAuthority: auctionManagerPDA
+               
+              },
+            );
+        
+            await sendAndConfirmTransaction(connection, tx, [payer, payer], {
+              commitment: 'confirmed',
+            });
+
+            console.log(`auction ${auctionPDA.toBase58()} has ended`)
+        })
+
+
+        program
+        .command('claim-bid')
+        .argument('<vault>', 'auction vault')
+        .option(
+            '-e, --env <string>',
+            'Solana cluster env name',
+            'devnet',
+        )
+        .requiredOption(
+            '-k, --keypair <path>',
+            `Solana wallet location`,
+            '--keypair not provided',
+        )
+        .action(async (vault, options) => {
+
+            const { env, keypair } = options;
+
+            const connection = new Connection(clusterApiUrl(env))
+            const wallet = new NodeWallet(loadKeypair(keypair))
+
+            const {payer} = wallet
+            const storeId = await Store.getPDA(payer.publicKey);
+
+            const vaultPubKey = new PublicKey(vault);
+            const auctionPDA = await Auction.getPDA(vaultPubKey);
+    
+            const {txId} = await claimBid({connection, wallet, store: storeId, auction: auctionPDA, bidderPotToken: wallet.publicKey})
+        
+            connection.confirmTransaction(txId);
+        
+            console.log(`auction ${auctionPDA.toBase58()} has ended`)
+        })
 
 program.parse(process.argv);

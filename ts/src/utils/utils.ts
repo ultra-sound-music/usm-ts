@@ -1,11 +1,11 @@
 import BN from 'bn.js';
-import { Commitment, Keypair, PublicKey, SystemProgram, TransactionSignature, sendAndConfirmTransaction} from '@solana/web3.js';
+import { Commitment, Keypair, PublicKey, SystemProgram, TransactionSignature, sendAndConfirmTransaction, LAMPORTS_PER_SOL} from '@solana/web3.js';
 import { AccountLayout, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Connection } from '@metaplex/js';
+import { Connection, Wallet } from '@metaplex/js';
 
-import { Wallet } from '@metaplex/js';
 
 import {
+  Auction,
   AuctionProgram,
   AuctionExtended,
   BidderMetadata,
@@ -19,6 +19,7 @@ const { getCancelBidTransactions, createApproveTxs, createWrappedAccountTxs, sen
 const {CreateTokenAccount} = transactions;
 
 import { Transaction } from '@metaplex-foundation/mpl-core';
+import { prepareTokenAccountAndMintTxs } from '@metaplex/js/lib/actions';
 
 
 const getBidderPotTokenPDA = async (bidderPotPubKey) =>{
@@ -248,6 +249,58 @@ export const cancelBid = async ({
 
   return { txId };
 };
+
+
+type USMBidData = {
+  bidder: PublicKey,
+  bid: number,
+  timestamp: number
+}
+
+type USMAuctionData = {
+  // auction identifier
+  pubkey: PublicKey,
+  //token that is used for bids 
+  acceptedToken: PublicKey,
+  // returns unix timestamp
+  endedAt: number | null,
+  //returns unix timestamp
+  endAuctionAt: number | null,
+  //if the auction is currently live
+  isLive: boolean,
+  // array of processed bid
+  bids: USMBidData[],
+  //  if auction over returns winning bid else returns null
+  winner: USMBidData
+}
+
+export const transformAuctionData = async(auction: Auction, connection:Connection) =>{
+ 
+  let bids = await auction.getBidderMetadata(connection);
+  const usmBidData = bids.filter(bid => !bid.data.cancelled)
+             .map((bid)=>{
+                const {data} = bid;  
+                const bidData : USMBidData = {
+                  bidder: new PublicKey(data.bidderPubkey),
+                  bid: data.lastBid.toNumber() / LAMPORTS_PER_SOL,
+                  timestamp: data.lastBidTimestamp.toNumber(),
+                } 
+                return bidData
+              }).sort((a, b) => (b.bid) - (a.bid));
+
+  
+  const AuctionData : USMAuctionData = {
+    pubkey: auction.pubkey,
+    acceptedToken: new PublicKey(auction.data.tokenMint),
+    endedAt: auction.data.endAuctionAt ? auction.data.endedAt.toNumber(): null, 
+    endAuctionAt: auction.data.endAuctionAt ? auction.data.endAuctionAt.toNumber(): null, 
+    isLive: auction.data.state === 1,
+    bids: usmBidData,
+    winner: auction.data.state === 2 ? usmBidData[0] : null
+  }
+
+  return AuctionData
+}
 
 
 

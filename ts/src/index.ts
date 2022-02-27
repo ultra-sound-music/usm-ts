@@ -6,9 +6,9 @@ import { RedeemBid } from "@metaplex-foundation/mpl-metaplex";
 import { Connection, Wallet } from '@metaplex/js';
 import { PublicKey } from "@solana/web3.js";
 import { actions } from '@metaplex/js';
-import { placeBid, cancelBid } from "./utils/utils";
+import { placeBid, cancelBid, transformAuctionData } from "./utils/utils";
 import BN from 'bn.js';
-const { claimBid, redeemFullRightsTransferBid} = actions;
+const { claimBid, redeemFullRightsTransferBid, redeemParticipationBidV3} = actions;
 
 
 export class USMClient{
@@ -25,6 +25,11 @@ export class USMClient{
 
   async getAuction(pubKey: PublicKey){
     return Auction.load(this.connection, pubKey);
+  }
+
+  async getAuctionData(pubKey: PublicKey){
+    const a = await Auction.load(this.connection, pubKey);
+    return transformAuctionData(a, this.connection);
   }
 
   async placeBid(amount: BN, auction: PublicKey){
@@ -56,11 +61,13 @@ export class USMClient{
     })
   }
 
-  //TODO: implement
-
-  async refundBid(){
-
-
+  async redeemParticipationBid(store: PublicKey, auction: PublicKey){
+    return redeemParticipationBidV3({
+      connection: this.connection,
+      wallet: this.wallet,
+      store,
+      auction
+    })
   }
 
   async redeemBid(store: PublicKey, auction: PublicKey){
