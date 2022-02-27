@@ -1,6 +1,6 @@
 import BN from 'bn.js';
-import { Commitment, Keypair, PublicKey, SystemProgram, TransactionSignature, sendAndConfirmTransaction, LAMPORTS_PER_SOL} from '@solana/web3.js';
-import { AccountLayout, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Commitment, Keypair, PublicKey, TransactionSignature, LAMPORTS_PER_SOL, AccountInfo} from '@solana/web3.js';
+import { AccountLayout } from '@solana/spl-token';
 import { Connection, Wallet } from '@metaplex/js';
 
 
@@ -19,8 +19,6 @@ const { getCancelBidTransactions, createApproveTxs, createWrappedAccountTxs, sen
 const {CreateTokenAccount} = transactions;
 
 import { Transaction } from '@metaplex-foundation/mpl-core';
-import { prepareTokenAccountAndMintTxs } from '@metaplex/js/lib/actions';
-
 
 const getBidderPotTokenPDA = async (bidderPotPubKey) =>{
   return AuctionProgram.findProgramAddress([
@@ -124,11 +122,31 @@ export const placeBid = async ({
   const auctionExtended = await AuctionExtended.getPDA(vault);
   const bidderPot = await BidderPot.getPDA(auction, bidder);
   const bidderMeta = await BidderMetadata.getPDA(auction, bidder);
+  
+  
   const bidderPotToken = await getBidderPotTokenPDA(bidderPot)
 
+  const accountInfo = await connection.getAccountInfo(bidderPotToken);
+
   let txBatch = new TransactionsBatch({ transactions: [] });
-    // create a new account for bid
-    ////
+
+  //if the user has an existing biddder pot token acct cancel pending bid
+
+  if(accountInfo) {
+    txBatch = await getCancelBidTransactions({
+      destAccount: null,
+      bidder,
+      accountRentExempt,
+      bidderPot,
+      bidderPotToken,
+      bidderMeta,
+      auction,
+      auctionExtended,
+      auctionTokenMint,
+      vault,
+    });
+  }
+
   // create paying account
   const {
     account: payingAccount,
@@ -304,6 +322,5 @@ export const transformAuctionData = async(auction: Auction, connection:Connectio
 
   return AuctionData
 }
-
 
 
