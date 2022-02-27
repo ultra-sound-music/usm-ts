@@ -272,6 +272,7 @@ type USMAuctionData = {
   bids: USMBidData[],
   //  if auction over returns winning bid else returns null
   winner: USMBidData
+  participants: PublicKey[]
 }
 
 export const transformAuctionData = async(auction: Auction, connection:Connection) =>{
@@ -288,6 +289,7 @@ export const transformAuctionData = async(auction: Auction, connection:Connectio
                 return bidData
               }).sort((a, b) => (b.bid) - (a.bid));
 
+              usmBidData.map(bid=> bid.bidder);
   
   const AuctionData : USMAuctionData = {
     pubkey: auction.pubkey,
@@ -296,7 +298,8 @@ export const transformAuctionData = async(auction: Auction, connection:Connectio
     endAuctionAt: auction.data.endAuctionAt ? auction.data.endAuctionAt.toNumber(): null, 
     isLive: auction.data.state === 1,
     bids: usmBidData,
-    winner: auction.data.state === 2 ? usmBidData[0] : null
+    winner: auction.data.state === 2 ? usmBidData[0] : null,
+    participants: usmBidData.map(bid=> bid.bidder)
   }
 
   return AuctionData
