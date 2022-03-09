@@ -7,7 +7,7 @@
   "scripts": {
     "test": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/**/*.ts",
     "test-auction": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/test.auction.ts",
-    "build": "tsc -p ./src"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +22,6 @@
   "devDependencies": {
     "@types/chai": "^4.3.0",
     "@types/jest": "^27.4.1",
-    "@types/mocha": "^9.1.0",
     "chai": "^4.3.4",
     "i": "^0.3.7",
     "mocha": "^8.4.0",

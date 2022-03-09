@@ -2,12 +2,20 @@ import { TOKEN_PROGRAM_ID, MintLayout, u64 } from "@solana/spl-token";
 import { Auction } from '@metaplex-foundation/mpl-auction';
 import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
 import { Account } from '@metaplex-foundation/mpl-core';
-import { Connection, Wallet } from '@metaplex/js';
-import { PublicKey } from "@solana/web3.js";
+import { Connection, Wallet, } from '@metaplex/js';
+import { PublicKey, TransactionSignature } from "@solana/web3.js";
 import { actions } from '@metaplex/js';
 import { cancelBid, transformAuctionData, placeBid } from "./utils/utils";
 import BN from 'bn.js';
-const { redeemFullRightsTransferBid, redeemParticipationBidV3} = actions;
+const { redeemFullRightsTransferBid, redeemParticipationBidV3 } = actions;
+
+interface IRedeemParticipationBidV3Response {
+  txIds: TransactionSignature[];
+}
+
+interface IRedeemBidResponse {
+  txId: string;
+}
 
 export class USMClient{
   connection;
@@ -45,16 +53,17 @@ export class USMClient{
     })
   }
 
-  async redeemParticipationBid(store: PublicKey, auction: PublicKey){
+  async redeemParticipationBid(store: PublicKey, auction: PublicKey): Promise<IRedeemParticipationBidV3Response>{
     return redeemParticipationBidV3({
       connection: this.connection,
       wallet: this.wallet,
       store,
       auction
     })
+     
   }
 
-  async redeemBid(store: PublicKey, auction: PublicKey){
+  async redeemBid(store: PublicKey, auction: PublicKey): Promise<IRedeemBidResponse>{
     return redeemFullRightsTransferBid({
       connection: this.connection,
       wallet: this.wallet,

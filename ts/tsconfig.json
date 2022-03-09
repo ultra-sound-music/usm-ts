@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "outDir": "./lib",
+        "typeRoots": [
+            "./node_modules/@types"
+        ],
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "downlevelIteration": true,
+        "module": "commonjs",
+        "declaration": true,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "noLib": false,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "target": "es6",
+        "sourceMap": true,
+        "lib": [
+            "es6"
+        ]
+    },
+    "include": [
+        "./src"
+    ]
+}
