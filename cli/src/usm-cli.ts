@@ -6,7 +6,7 @@ import { NATIVE_MINT, Token, TOKEN_PROGRAM_ID} from '@solana/spl-token';
 import { NodeWallet, actions } from '@metaplex/js';
 const {initStoreV2, createExternalPriceAccount, createVault, initAuction, addTokensToVault, mintNFT, closeVault, claimBid} = actions;
 const { Connection, clusterApiUrl, PublicKey,  sendAndConfirmTransaction } = web3;
-import { loadKeypair, createMetadataUri, getOriginalLookupPDA,  } from "./utils/utils"
+import { loadKeypair, createMetadataUri, getOriginalLookupPDA, uploadImage  } from "./utils/utils"
 
 import { 
     AmountRange, 
@@ -168,6 +168,26 @@ program
         console.log("price mint = ", priceMint.toBase58())
     
     })
+
+    program
+    .command('upload-image')
+    .requiredOption(
+        '-ar, --arwallet <path>',
+        'ar wallet path',
+        '--arwallet not provided',
+    )
+    .requiredOption(
+    '-i, --image <path>',
+    `path to image`,
+    '--image-path not provided',
+    )
+    .action(async (options) => {
+
+        const {image, arwallet} = options;
+
+        return uploadImage({arweaveWallet: arwallet, imagePath: image })
+
+})
 
     program
         .command('create-metadata-uri')

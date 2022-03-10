@@ -16,6 +16,55 @@ export const loadKeypair = (keypair) => {
     return loaded;
 }
 
+export const uploadImage = async ({arweaveWallet, imagePath}) => {
+
+    // need to save prod key in .env variable 
+
+    //const wallet = await arweave.wallets.generate();
+
+    const host = "arweave.net";
+    const port = "443";
+    const protocol = "https";
+
+    const arweave = Arweave.init({
+      host,
+      port,
+      protocol,
+      timeout: 20000,
+  });
+
+    const arPath = arweaveWallet.startsWith("~/") ? path.resolve(process.env.HOME, arweaveWallet.slice(2)) : path.resolve(arweaveWallet)
+
+    const arWallet = JSON.parse(fs.readFileSync(arPath).toString())
+    const address = await arweave.wallets.jwkToAddress(arWallet);
+    const winston = await arweave.wallets.getBalance(address);
+
+    console.log("ar address = ", address)
+    console.log("ar balance winstons =", winston)
+
+
+     // image to upload
+
+    let data = fs.readFileSync(path.resolve(__dirname, imagePath));
+
+    const imgTx = await arweave.createTransaction(
+        {
+            data,
+        },
+        arWallet,
+    );
+    imgTx.addTag('App-Name', 'dfs');
+    imgTx.addTag('Content-Type', 'image/jpg');
+
+    await arweave.transactions.sign(imgTx, arWallet);
+    await arweave.transactions.post(imgTx);
+
+    const imageUri = `${protocol}://${host}:${port}/${imgTx.id}`
+
+    console.log("image uploaded successfully");
+    console.log("image url =", imageUri)
+}
+
 export const createMetadataUri = async ({arweaveWallet, metadataPath}) => {
 
     // need to save prod key in .env variable 
@@ -44,29 +93,6 @@ export const createMetadataUri = async ({arweaveWallet, metadataPath}) => {
     console.log("address = ", address)
     console.log("balance winstons =", winston)
 
-
-    // image to upload
-
-    /*let data = fs.readFileSync(path.resolve(__dirname, config.media.imagePath));
-
-    const imgTx = await arweave.createTransaction(
-        {
-            data,
-        },
-        arWallet,
-    );
-    imgTx.addTag('App-Name', 'dfs');
-    imgTx.addTag('Content-Type', 'image/jpg');
-
-    await arweave.transactions.sign(imgTx, arWallet);
-    await arweave.transactions.post(imgTx);
-
-    const imageUri = `${protocol}://${host}:${port}/${imgTx.id}`
-
-    metadata.image = `${protocol}://${host}:${port}/${imgTx.id}`
-
-    console.log(imageUri);*/
-
     const arTx = await arweave.createTransaction(
         {
             data: JSON.stringify(metadata),
@@ -83,6 +109,10 @@ export const createMetadataUri = async ({arweaveWallet, metadataPath}) => {
     console.log(`metadata URI = ${metadataUri}`)
 
 }
+
+
+
+ 
 
 export const getOriginalLookupPDA =  async(auctionKey, metadataKey) => {
     return MetaplexProgram.findProgramAddress([
