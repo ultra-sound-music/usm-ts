@@ -5,8 +5,8 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
-    "test": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/**/*.ts",
-    "test-auction": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/test.auction.ts",
+    "test": "./node_modules/ts-mocha/bin/ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
+    "test-auction": "./node_modules/ts-mocha/bin/ts-mocha -p ./tsconfig.json -t 1000000 tests/test.auction.ts",
     "build": "tsc"
   },
   "keywords": [],

@@ -36,40 +36,59 @@ export class USMClient{
   }
 
   async placeBid(amount: BN, auction: PublicKey){
-    return placeBid({
+    //place bid   
+    const result = await placeBid({
       connection: this.connection, 
       wallet: this.wallet, 
       amount, 
       auction, 
     })
+    // wait for tx to confirm
+    await this.connection.confirmTransaction(result.txId);
+    return result;
   }
 
   async cancelBid(auction: PublicKey){
-
-    return cancelBid({
+    //cancel bid
+    const result = await cancelBid({
       connection: this.connection,
       wallet: this.wallet,
       auction
     })
+    //wait for tx to confirm
+    await this.connection.confirmTransaction(result.txId);
+    return result
+
   }
 
   async redeemParticipationBid(store: PublicKey, auction: PublicKey): Promise<IRedeemParticipationBidV3Response>{
-    return redeemParticipationBidV3({
+    // redeem participation bid
+    
+    const result = await redeemParticipationBidV3({
       connection: this.connection,
       wallet: this.wallet,
       store,
       auction
     })
+    // wait for both the initTx and mainTx to confirm
+
+    this.connection.confirmTransaction(result.txIds[0])
+    this.connection.confirmTransaction(result.txIds[1])
+    return result;
      
   }
 
   async redeemBid(store: PublicKey, auction: PublicKey): Promise<IRedeemBidResponse>{
-    return redeemFullRightsTransferBid({
+    const result = await redeemFullRightsTransferBid({
       connection: this.connection,
       wallet: this.wallet,
       store,
       auction
     })
+    // wait for tx to confirm
+    this.connection.confirmTransaction(result.txId);
+    return result
+
   }
 
   async getMint(tokenMint: PublicKey){

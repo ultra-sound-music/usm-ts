@@ -1,23 +1,62 @@
 {
-  "name": "Pato",
-  "symbol": "PATO",
-  "description": "El pato sin manos",
-  "seller_fee_basis_points": 500,
-  "external_url": "",
-  "image": "https://www.arweave.net/RTiX1MRVCIAnSGhgZ9-GVvn6seHYu6_kg8SR9tOnwfk?ext=jpeg",
-  "properties": {
-    "files": [
-      {
-        "uri": "https://www.arweave.net/RTiX1MRVCIAnSGhgZ9-GVvn6seHYu6_kg8SR9tOnwfk?ext=jpeg",
-        "type": "image/jpeg"
-      }
-    ],
-    "category": "image",
-    "creators": [
-      {
-        "address": "3QJZJujTgrfeGQhLPX3YMseZ7ovhQbo6eWu3SLbMQzqS",
-        "share": 100
-      }
-    ]
+  "name": "Genesis V1 Bot #1",
+  "symbol": "v1n1",
+  "description": "Genesis V1 Bot #1 is an English singer, songwriter, DJ, fashion designer, photographer and record producer. He is the lead singer of a nationally acclaimed pop band.",
+  "seller_fee_basis_points": 1000,
+  "image": "https://arweave.net:443/Zp8y0YS37D38y_-z4tRyi0REVvUA352FOLYrCyBaAvM",
+  "attributes": [
+  {
+  "trait_type": "Debut",
+  "value": 1546360800,
+  "display_type": "date"
+  },
+  {
+  "trait_type": "Hometown",
+  "value": "London, England"
+  },
+  {
+  "trait_type": "Type",
+  "value": "Robot"
+  },
+  {
+  "trait_type": "Personality",
+  "value": "Violent"
+  },
+  {
+  "trait_type": "Swagger",
+  "value": "Eclectic"
+  },
+  {
+  "trait_type": "Fame",
+  "value": "Festival Regular"
+  },
+  {
+  "trait_type": "Melodic Style",
+  "value": "Major"
+  },
+  {
+  "trait_type": "Textural Style",
+  "value": "Rhythmic"
+  },
+  {
+  "trait_type": "Energy",
+  "value": "Dreamy"
   }
-}
+  ],
+  "external_url": "",
+  "properties": {
+  "files": [
+  {
+  "uri": "https://arweave.net:443/Zp8y0YS37D38y_-z4tRyi0REVvUA352FOLYrCyBaAvM",
+  "type": "image/png"
+  }
+  ],
+  "category": "image",
+  "creators": [
+  {
+  "address": "3QJZJujTgrfeGQhLPX3YMseZ7ovhQbo6eWu3SLbMQzqS",
+  "share": 100
+  }
+  ]
+  }
+  }

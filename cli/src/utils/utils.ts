@@ -54,7 +54,7 @@ export const uploadImage = async ({arweaveWallet, imagePath}) => {
         arWallet,
     );
     imgTx.addTag('App-Name', 'dfs');
-    imgTx.addTag('Content-Type', 'image/jpg');
+    imgTx.addTag('Content-Type', 'image/png');
 
     await arweave.transactions.sign(imgTx, arWallet);
     await arweave.transactions.post(imgTx);

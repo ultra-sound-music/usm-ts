@@ -578,6 +578,9 @@ program
                     commitment: 'confirmed',
                 });
 
+                console.log(`auction manager validated!`)
+
+
             }
         })
 
