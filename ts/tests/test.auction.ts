@@ -13,14 +13,15 @@ describe('auction', () => {
   let provider;
   let connection;
   let wallet;
-  let USM;
+  let USM: USMClient;
 
   before(async()=>{
     const walletKeypair = Keypair.generate()
     provider = new Provider(new Connection(clusterApiUrl('devnet')), new NodeWallet(walletKeypair), {});
     ({connection, wallet} = provider);
     await connection.confirmTransaction( await connection.requestAirdrop(wallet.publicKey, 2 * LAMPORTS_PER_SOL))
-    USM = new USMClient(connection, wallet);
+    USM = new USMClient('devnet', wallet);
+    USM.connection = connection;
   })
 
 
@@ -35,12 +36,13 @@ describe('auction', () => {
   })
 
   it("should place a bid on the auction", async ()=>{
-    const bidAmount = new BN(1 * 10**9);
-    await USM.placeBid(bidAmount, AUCTION_PUBKEY);
+    const { confirmTransaction } = await USM.placeBid(1, AUCTION_PUBKEY);
+    await confirmTransaction();
   })
 
   it("should cancel a bid on the auction", async ()=>{
-    await USM.cancelBid(AUCTION_PUBKEY);
+    const { confirmTransaction } = await USM.cancelBid(AUCTION_PUBKEY);
+    await confirmTransaction();
   })
 
   it("should claim bid on the auction", async ()=>{

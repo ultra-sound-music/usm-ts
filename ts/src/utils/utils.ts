@@ -1,8 +1,7 @@
 import BN from 'bn.js';
-import { Commitment, Keypair, PublicKey, TransactionSignature, LAMPORTS_PER_SOL, AccountInfo} from '@solana/web3.js';
+import { Commitment, Keypair, PublicKey, TransactionSignature, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { AccountLayout } from '@solana/spl-token';
-import { Connection, Wallet } from '@metaplex/js';
-
+import { Connection, Wallet, actions } from '@metaplex/js';
 
 import {
   Auction,
@@ -14,13 +13,11 @@ import {
 } from '@metaplex-foundation/mpl-auction';
 
 import { AuctionManager } from '@metaplex-foundation/mpl-metaplex';
-import { actions,  transactions} from '@metaplex/js';
-const { getCancelBidTransactions, createApproveTxs, createWrappedAccountTxs, sendTransaction} = actions;
-const {CreateTokenAccount} = transactions;
-
 import { Transaction } from '@metaplex-foundation/mpl-core';
 
-const getBidderPotTokenPDA = async (bidderPotPubKey) =>{
+const { getCancelBidTransactions, createApproveTxs, createWrappedAccountTxs, sendTransaction} = actions;
+
+const getBidderPotTokenPDA = async (bidderPotPubKey: PublicKey) =>{
   return AuctionProgram.findProgramAddress([
     Buffer.from(AuctionProgram.PREFIX),
     bidderPotPubKey.toBuffer(),
@@ -269,13 +266,13 @@ export const cancelBid = async ({
 };
 
 
-type USMBidData = {
+export type USMBidData = {
   bidder: PublicKey,
   bid: number,
   timestamp: number
 }
 
-type USMAuctionData = {
+export type USMAuctionData = {
   // auction identifier
   pubkey: PublicKey,
   //token that is used for bids 
@@ -302,7 +299,7 @@ export const transformAuctionData = async(auction: Auction, connection:Connectio
                 const bidData : USMBidData = {
                   bidder: new PublicKey(data.bidderPubkey),
                   bid: data.lastBid.toNumber() / LAMPORTS_PER_SOL,
-                  timestamp: data.lastBidTimestamp.toNumber(),
+                  timestamp: data.lastBidTimestamp.toNumber() * 1000,
                 } 
                 return bidData
               }).sort((a, b) => (b.bid) - (a.bid));
@@ -312,7 +309,9 @@ export const transformAuctionData = async(auction: Auction, connection:Connectio
   const AuctionData : USMAuctionData = {
     pubkey: auction.pubkey,
     acceptedToken: new PublicKey(auction.data.tokenMint),
-    endedAt: auction.data.endAuctionAt ? auction.data.endedAt.toNumber(): null, 
+    endedAt: auction.data.endedAt ? auction.data.endedAt.toNumber() * 1000: null, 
+    // @TODO endAuctionAt is actually auction duration, poorly named, in seconds 
+    // metaplex/js/packages/web/src/views/auctionCreate/index.tsx
     endAuctionAt: auction.data.endAuctionAt ? auction.data.endAuctionAt.toNumber(): null, 
     isLive: auction.data.state === 1,
     bids: usmBidData,

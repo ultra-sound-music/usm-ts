@@ -1,9 +1,9 @@
 {
-  "name": "ts",
-  "version": "1.0.0",
+  "name": "usm-js",
+  "version": "0.0.4",
   "description": "",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "test": "./node_modules/ts-mocha/bin/ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
     "test-auction": "./node_modules/ts-mocha/bin/ts-mocha -p ./tsconfig.json -t 1000000 tests/test.auction.ts",
